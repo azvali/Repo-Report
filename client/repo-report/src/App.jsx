@@ -4,6 +4,8 @@ import { useState } from 'react'
 function App() {
   const [overall, setOverall] = useState('');
   const [single, setSingle] = useState([]);
+
+  
   const [num, setNum] = useState('');
   const [url, setUrl] = useState('');
 
@@ -34,7 +36,7 @@ function App() {
       </form>
       <div className='output'>
         <div className='overall-summary'>
-          {/* overall summary card */}
+          {overall}
         </div>
         <div className='single-commit'>
           {/* single commit summary cards */}
