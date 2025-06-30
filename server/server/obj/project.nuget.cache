@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "BRM+dt7md4M=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\azval\\Desktop\\Repo-Report\\server\\server\\server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\azval\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.6\\microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",
+    "C:\\Users\\azval\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
