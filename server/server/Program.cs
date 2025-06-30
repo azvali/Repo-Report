@@ -12,4 +12,16 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 
 app.UseCors();
+
+
+app.MapPost("/api/getSummaries", async (Request request) => {
+    
+
+});
+
+public class Request{
+    public required int Num {get; set;}
+    public required string Url {get; set;}
+}
+
 app.Run();
