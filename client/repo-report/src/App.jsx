@@ -21,7 +21,7 @@ function App() {
       alert("30 commits max.");
     }
 
-    const response = await fetch("/api/getSummaries", {
+    const response = await fetch("http://localhost:5135/api/getSummaries", {
       method: "POST",
       headers : {"Content-Type" : "application/json"},
       body : JSON.stringify({
@@ -33,7 +33,7 @@ function App() {
     const data = await response.json();
 
     //do something
-
+    console.log(data);
 
   };
 

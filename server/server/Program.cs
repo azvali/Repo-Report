@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +19,11 @@ var app = builder.Build();
 app.UseCors();
 
 
-app.MapPost("/api/getSummaries", async (Request request, IHttpClientFactory httpClientFactory) => {
+
+
+app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromServices] IHttpClientFactory httpClientFactory) => {
     
-    if(!request.Num || !request.Url){
+    if(request.Num == 0 || string.IsNullOrEmpty(request.Url)){
         return Results.BadRequest(new {message = "Input is invalid."});
     }
 
@@ -34,8 +37,26 @@ app.MapPost("/api/getSummaries", async (Request request, IHttpClientFactory http
         return Results.BadRequest(new {message = "Invalid Github URL format."});
     }
 
+    client.DefaultRequestHeaders.Add("User-Agent", "Repo-Report-App");
+    var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/commits?per_page={request.Num}";
+
+    var response = await client.GetAsync(apiUrl);
+
+    if(!response.IsSuccessStatusCode){
+        return Results.BadRequest(new { message = $"Github API error: {response.StatusCode}"});
+    }
+
+    var content = await response.Content.ReadAsStringAsync();
+    var jsonContent = JsonSerializer.Deserialize<JsonElement>(content);
+
+    return Results.Ok(jsonContent);
+
     
 });
+
+app.Run();
+
+
 
 static (string? owner, string? repo) ParseGitHubUrl(string url){
 
@@ -48,9 +69,9 @@ static (string? owner, string? repo) ParseGitHubUrl(string url){
 
     return (null, null);
 }
+
 public class Request{
     public required int Num {get; set;}
     public required string Url {get; set;}
 }
 
-app.Run();
