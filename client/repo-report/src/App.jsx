@@ -9,12 +9,28 @@ function App() {
   const [num, setNum] = useState('');
   const [url, setUrl] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
 
     //filtering - validate
+    if(!num || !url){
+      alert("Please fill all inputs.");
+    }
+    if(num > 30){
+      alert("30 commits max.");
+    }
 
+    const response = await fetch("/api/getSummaries", {
+      method: "POST",
+      headers : {"Content-Type" : "application/json"},
+      body : JSON.stringify({
+        num : num,
+        url : url
+      })
+    })
+    
+    const data = await response.json();
 
     //do something
 
