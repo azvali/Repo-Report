@@ -40,7 +40,9 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
     client.DefaultRequestHeaders.Add("User-Agent", "Repo-Report-App");
     var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/commits?per_page={request.Num}";
 
-    var response = await client.GetAsync(apiUrl);
+    var requestMessage = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+
+    var response = await client.SendAsync(requestMessage);
 
     if(!response.IsSuccessStatusCode){
         return Results.BadRequest(new { message = $"Github API error: {response.StatusCode}"});
