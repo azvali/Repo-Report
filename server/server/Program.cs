@@ -46,17 +46,54 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
         return Results.BadRequest(new { message = $"Github API error: {response.StatusCode}"});
     }
 
-    var content = await response.Content.ReadAsStringAsync();
-    var jsonContent = JsonSerializer.Deserialize<JsonElement>(content);
+    var data = await response.Content.ReadAsStringAsync();
+    var jsonCommits = JsonSerializer.Deserialize<JsonElement>(data);
 
-    return Results.Ok(jsonContent);
+    var tasks = new List<Task<CleanedItem>>();
 
-    
+    foreach(var commit in jsonCommits.EnumerateArray()){
+        tasks.Add(GetDetails(commit, httpClientFactory, owner, repo));
+    }
+
+    var res = await Task.WhenAll(tasks);
+
+    return Results.Ok(res);
 });
 
 app.Run();
 
+static async Task<CleanedItem> GetDetails(JsonElement commit, IHttpClientFactory httpClientFactory, string owner, string repo){
+    var client = httpClientFactory.CreateClient();
+    client.DefaultRequestHeaders.Add("User-Agent", "Repo-Report-App");
 
+    var sha = commit.GetProperty("sha").GetString();
+    var commitDetailsUrl = $"https://api.github.com/repos/{owner}/{repo}/commits/{sha}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, commitDetailsUrl);
+    request.Headers.Add("Accept", "application/vnd.github.diff");
+
+    var response = await client.SendAsync(request);
+    var diff = "error fetching diff.";
+
+    if(response.IsSuccessStatusCode){
+        diff = await response.Content.ReadAsStringAsync();
+    }
+
+    var commitData = commit.GetProperty("commit");
+    var committerData = commitData.GetProperty("committer");
+
+
+    return new CleanedItem
+    {
+        Date = committerData.GetProperty("date").GetString(),
+        Committer = committerData.GetProperty("name").GetString(),
+        Comment = commitData.GetProperty("message").GetString(),
+        Hash = sha,
+        commitURL = commit.GetProperty("html_url").GetString(),
+        Diff = diff
+    };
+
+}
 
 static (string? owner, string? repo) ParseGitHubUrl(string url){
 
@@ -75,3 +112,11 @@ public class Request{
     public required string Url {get; set;}
 }
 
+public class CleanedItem{
+    public string Date {get; set;}
+    public string Committer {get; set;}
+    public string Comment {get; set;}
+    public string Hash {get; set;}
+    public string commitURL {get; set;}
+    public string Diff {get; set;}
+}
