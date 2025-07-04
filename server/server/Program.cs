@@ -36,7 +36,7 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
     if(owner == null || repo == null){
         return Results.BadRequest(new {message = "Invalid Github URL format."});
     }
-    
+
     var client = httpClientFactory.CreateClient();
     client.DefaultRequestHeaders.Add("User-Agent", "Repo-Report-App");
     var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/commits?per_page={request.Num}";
@@ -60,7 +60,52 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
 
     var res = await Task.WhenAll(tasks);
 
-    return Results.Ok(res);
+
+    var ai_client = httpClientFactory.CreateClient();
+    ai_client.DefaultRequestHeaders.Add("Authorization", "Bearer YOUR_API_KEY_HERE");
+
+    var openAiPayload = new
+    {
+        model = "gpt-3.5-turbo", //mebbe use o4 mini 
+        messages = new[]
+        {
+            new { role = "system", content = "" }, //give gpt a role
+            new { role = "user", content = "" + JsonSerializer.Serialize(res) } //tell gpt to summarize everything
+        },
+        max_tokens = 250 
+    };
+
+    var ai_jsonContent = JsonSerializer.Serialize(openAiPayload);
+
+    var payload = new StringContent(
+        ai_jsonContent,
+        System.Text.Encoding.UTF8,
+        "application/json"
+    );
+
+    var ai_apiUrl = "https://api.openai.com/v1/chat/completions";
+    var ai_request = new HttpRequestMessage(HttpMethod.Post, ai_apiUrl);
+    ai_request.Content = payload;
+
+    var ai_response = await ai_client.SendAsync(ai_request);
+
+
+    if (ai_response.IsSuccessStatusCode)
+    {
+        var ai_data_string = await ai_response.Content.ReadAsStringAsync();
+
+        return Results.Ok(ai_data_string); 
+    }
+    else
+    {
+
+        var err = await ai_response.Content.ReadAsStringAsync();
+        return Results.Problem(
+            detail: err,
+            statusCode: (int)ai_response.StatusCode,
+            title: "Error from AI service"
+        );
+    }
 });
 
 app.Run();
