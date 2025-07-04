@@ -31,12 +31,13 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
         return Results.BadRequest(new {message = "int > 30"});
     }
 
-    var client = httpClientFactory.CreateClient();
+  
     var (owner, repo) = ParseGitHubUrl(request.Url);
     if(owner == null || repo == null){
         return Results.BadRequest(new {message = "Invalid Github URL format."});
     }
-
+    
+    var client = httpClientFactory.CreateClient();
     client.DefaultRequestHeaders.Add("User-Agent", "Repo-Report-App");
     var apiUrl = $"https://api.github.com/repos/{owner}/{repo}/commits?per_page={request.Num}";
 
