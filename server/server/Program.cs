@@ -21,7 +21,7 @@ app.UseCors();
 
 
 
-app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromServices] IHttpClientFactory httpClientFactory) => {
+app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromServices] IHttpClientFactory httpClientFactory, [FromServices] IConfiguration configuration) => {
     
     if(request.Num == 0 || string.IsNullOrEmpty(request.Url)){
         return Results.BadRequest(new {message = "Input is invalid."});
@@ -60,17 +60,23 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
 
     var res = await Task.WhenAll(tasks);
 
+    var open_api_key = configuration["OPENAI_API_KEY"];
+    if(string.IsNullOrEmpty(open_api_key)){
+        return Results.Problem(detail: "failed to fetch openai api key.",
+        statusCode: 500,
+        title: "Server config error."
+    );}
 
     var ai_client = httpClientFactory.CreateClient();
-    ai_client.DefaultRequestHeaders.Add("Authorization", "Bearer YOUR_API_KEY_HERE");
+    ai_client.DefaultRequestHeaders.Add("Authorization", $"Bearer {open_api_key}");
 
     var openAiPayload = new
     {
-        model = "gpt-3.5-turbo", //mebbe use o4 mini 
+        model = "gpt-4o-mini", //mebbe use o4 mini 
         messages = new[]
         {
-            new { role = "system", content = "" }, //give gpt a role
-            new { role = "user", content = "" + JsonSerializer.Serialize(res) } //tell gpt to summarize everything
+            new { role = "system", content = "You are a helpful assistant that summarizes GitHub commit history and diff logs in a clear, simple, and insightful way. Your goal is to help developers quickly understand the recent changes and evolution of a repository." }, //give gpt a role
+            new { role = "user", content = "Please summarize the following GitHub commit messages and diff logs. Focus on the overall changes, trends, and significant modifications made over time. Make it concise, easy to understand, and useful for someone reviewing recent history. Here is the data:\n\n" + JsonSerializer.Serialize(res) } //tell gpt to summarize everything
         },
         max_tokens = 250 
     };
