@@ -82,7 +82,6 @@ app.MapPost("/api/getSummaries", async ([FromBody] Request request, [FromService
     };
 
     var ai_jsonContent = JsonSerializer.Serialize(openAiPayload);
-
     var payload = new StringContent(
         ai_jsonContent,
         System.Text.Encoding.UTF8,
